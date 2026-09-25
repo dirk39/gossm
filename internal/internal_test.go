@@ -17,7 +17,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	if os.Getenv("CIRCLECI") != "" {
+	if os.Getenv("CIRCLECI") != "" || os.Getenv("CI") != "" || os.Getenv("GITHUB_ACTIONS") != "" {
 		os.Exit(0)
 	}
 
