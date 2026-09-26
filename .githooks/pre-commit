@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -e
+
+# If asdf is installed, fall back to an installed Go version if current preset is missing
+if command -v asdf >/dev/null 2>&1; then
+    if ! asdf which go >/dev/null 2>&1; then
+        INSTALLED_GO=$(asdf list golang 2>/dev/null | tr -d ' *' | tail -n 1)
+        if [ -n "$INSTALLED_GO" ]; then
+            export ASDF_GOLANG_VERSION="$INSTALLED_GO"
+        fi
+    fi
+fi
+
+echo "==> [pre-commit] Running unit tests..."
+go test -race ./...
+echo "==> [pre-commit] Unit tests passed successfully!"

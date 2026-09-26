@@ -68,7 +68,9 @@ func AskUser() (*User, error) {
 		Message: "Type your connect ssh user (default: root):",
 	}
 	var user string
-	survey.AskOne(prompt, &user)
+	if err := survey.AskOne(prompt, &user); err != nil {
+		return nil, WrapError(err)
+	}
 	user = strings.TrimSpace(user)
 	if user == "" {
 		user = "root"
@@ -117,7 +119,7 @@ func AskTarget(ctx context.Context, cfg aws.Config) (*Target, error) {
 	}
 
 	options := make([]string, 0, len(table))
-	for k, _ := range table {
+	for k := range table {
 		options = append(options, k)
 	}
 	sort.Strings(options)
@@ -148,7 +150,7 @@ func AskMultiTarget(ctx context.Context, cfg aws.Config) ([]*Target, error) {
 	}
 
 	options := make([]string, 0, len(table))
-	for k, _ := range table {
+	for k := range table {
 		options = append(options, k)
 	}
 	sort.Strings(options)
@@ -428,12 +430,15 @@ func FindDomainByInstanceId(ctx context.Context, cfg aws.Config, instanceId stri
 	return []string{}, nil
 }
 
-// AskUser asks you which selects a user.
+// AskHost asks you which selects a host address.
 func AskHost() (host string, retErr error) {
 	prompt := &survey.Input{
 		Message: "Type your host address you want to forward to:",
 	}
-	survey.AskOne(prompt, &host)
+	if err := survey.AskOne(prompt, &host); err != nil {
+		retErr = WrapError(err)
+		return
+	}
 	host = strings.TrimSpace(host)
 	if host == "" {
 		retErr = errors.New("you must specify a host address")
@@ -492,28 +497,25 @@ func PrintCommandInvocation(ctx context.Context, cfg aws.Config, inputs []*ssm.G
 	for _, input := range inputs {
 		wg.Add(1)
 		go func(input *ssm.GetCommandInvocationInput) {
-		Exit:
+			defer wg.Done()
 			for {
-				select {
-				case <-time.After(1 * time.Second):
-					output, err := client.GetCommandInvocation(ctx, input)
-					if err != nil {
-						color.Red("%v", err)
-						break Exit
-					}
-					status := strings.ToLower(string(output.Status))
-					switch status {
-					case "pending", "inprogress", "delayed":
-					case "success":
-						fmt.Printf("[%s][%s] %s\n", color.GreenString("success"), color.YellowString(*output.InstanceId), color.GreenString(*output.StandardOutputContent))
-						break Exit
-					default:
-						fmt.Printf("[%s][%s] %s\n", color.RedString("err"), color.YellowString(*output.InstanceId), color.RedString(*output.StandardErrorContent))
-						break Exit
-					}
+				time.Sleep(1 * time.Second)
+				output, err := client.GetCommandInvocation(ctx, input)
+				if err != nil {
+					color.Red("%v", err)
+					return
+				}
+				status := strings.ToLower(string(output.Status))
+				switch status {
+				case "pending", "inprogress", "delayed":
+				case "success":
+					fmt.Printf("[%s][%s] %s\n", color.GreenString("success"), color.YellowString(*output.InstanceId), color.GreenString(*output.StandardOutputContent))
+					return
+				default:
+					fmt.Printf("[%s][%s] %s\n", color.RedString("err"), color.YellowString(*output.InstanceId), color.RedString(*output.StandardErrorContent))
+					return
 				}
 			}
-			wg.Done()
 		}(input)
 	}
 

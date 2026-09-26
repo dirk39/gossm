@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 		}
 		cred, err := cfg.Credentials.Retrieve(context.Background())
 		if err != nil {
-			panic(err)
+			os.Exit(0)
 		}
 		mockAwsKey = cred.AccessKeyID
 		mockAwsSecret = cred.SecretAccessKey

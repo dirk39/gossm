@@ -17,12 +17,8 @@ func TestWrapError(t *testing.T) {
 		"error": {err: fmt.Errorf("[err] obj error")},
 	}
 
-	for _, t := range tests {
-		err := WrapError(t.err)
-		switch t.err.(type) {
-		case error:
-			assert.True(errors.Is(err, t.err.(error)))
-		}
-		fmt.Println(err)
+	for _, tc := range tests {
+		err := WrapError(tc.err)
+		assert.True(errors.Is(err, tc.err))
 	}
 }
