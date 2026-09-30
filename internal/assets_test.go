@@ -1,6 +1,9 @@
 package internal
 
 import (
+	"crypto/sha256"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,5 +57,31 @@ func TestGetSsmPlugin(t *testing.T) {
 	for _, t := range tests {
 		_, err := GetSsmPlugin()
 		assert.Equal(t.isErr, err != nil)
+	}
+}
+
+func TestAssetChecksums(t *testing.T) {
+	assert := assert.New(t)
+
+	checksumData, err := GetAsset("plugin/checksums.sha256")
+	assert.NoError(err)
+
+	lines := strings.Split(strings.TrimSpace(string(checksumData)), "\n")
+	assert.NotEmpty(lines)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.Fields(line)
+		assert.Len(parts, 2)
+		expectedHash := parts[0]
+		relPath := parts[1]
+
+		data, err := GetAsset("plugin/" + relPath)
+		assert.NoError(err, "failed to get asset plugin/%s", relPath)
+		actualHash := fmt.Sprintf("%x", sha256.Sum256(data))
+		assert.Equal(expectedHash, actualHash, "checksum mismatch for %s", relPath)
 	}
 }
