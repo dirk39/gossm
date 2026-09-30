@@ -56,3 +56,4 @@ release:
     name: gossm
   draft: false
   prerelease: auto
+  mode: keep-existing
