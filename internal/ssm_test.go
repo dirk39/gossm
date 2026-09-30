@@ -27,10 +27,12 @@ func TestFindInstances(t *testing.T) {
 		},
 	}
 
-	for _, t := range tests {
-		result, err := FindInstances(t.ctx, t.cfg)
-		assert.Equal(t.isErr, err != nil)
-		fmt.Println(len(result))
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := FindInstances(tc.ctx, tc.cfg)
+			assert.Equal(tc.isErr, err != nil)
+			fmt.Println(len(result))
+		})
 	}
 }
 func TestFindInstanceIdsWithConnectedSSM(t *testing.T) {
@@ -51,10 +53,12 @@ func TestFindInstanceIdsWithConnectedSSM(t *testing.T) {
 		},
 	}
 
-	for _, t := range tests {
-		result, err := FindInstanceIdsWithConnectedSSM(t.ctx, t.cfg)
-		assert.Equal(t.isErr, err != nil)
-		fmt.Println(len(result))
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := FindInstanceIdsWithConnectedSSM(tc.ctx, tc.cfg)
+			assert.Equal(tc.isErr, err != nil)
+			fmt.Println(len(result))
+		})
 	}
 }
 
@@ -78,10 +82,12 @@ func TestFindInstanceIdByIp(t *testing.T) {
 		},
 	}
 
-	for _, t := range tests {
-		result, err := FindInstanceIdByIp(t.ctx, t.cfg, t.ip)
-		assert.Equal(t.isErr, err != nil)
-		fmt.Println(result)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := FindInstanceIdByIp(tc.ctx, tc.cfg, tc.ip)
+			assert.Equal(tc.isErr, err != nil)
+			fmt.Println(result)
+		})
 	}
 }
 
@@ -105,10 +111,12 @@ func TestFindDomainByInstanceId(t *testing.T) {
 		},
 	}
 
-	for _, t := range tests {
-		result, err := FindDomainByInstanceId(t.ctx, t.cfg, t.instanceId)
-		assert.Equal(t.isErr, err != nil)
-		fmt.Println(result)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := FindDomainByInstanceId(tc.ctx, tc.cfg, tc.instanceId)
+			assert.Equal(tc.isErr, err != nil)
+			fmt.Println(result)
+		})
 	}
 }
 

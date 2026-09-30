@@ -24,9 +24,11 @@ func TestNewConfig(t *testing.T) {
 		"success": {ctx: context.Background(), key: mockAwsKey, secret: mockAwsSecret, region: mockRegion, isErr: false},
 	}
 
-	for _, t := range tests {
-		_, err := NewConfig(t.ctx, t.key, t.secret, t.token, t.region, t.roleArn)
-		assert.Equal(t.isErr, err != nil)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := NewConfig(tc.ctx, tc.key, tc.secret, tc.token, tc.region, tc.roleArn)
+			assert.Equal(tc.isErr, err != nil)
+		})
 	}
 }
 
@@ -49,8 +51,10 @@ func TestNewSharedConfig(t *testing.T) {
 			isErr:             false},
 	}
 
-	for _, t := range tests {
-		_, err := NewSharedConfig(t.ctx, t.profile, t.sharedConfigs, t.sharedCredentials)
-		assert.Equal(t.isErr, err != nil)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := NewSharedConfig(tc.ctx, tc.profile, tc.sharedConfigs, tc.sharedCredentials)
+			assert.Equal(tc.isErr, err != nil)
+		})
 	}
 }
