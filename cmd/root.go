@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -93,7 +92,7 @@ func initConfig() {
 	_credential.ssmPluginPath = filepath.Join(_credential.gossmHomePath, internal.GetSsmPluginName())
 	if info, err := os.Stat(_credential.ssmPluginPath); os.IsNotExist(err) {
 		color.Green("[create] aws ssm plugin")
-		if err := ioutil.WriteFile(_credential.ssmPluginPath, plugin, 0755); err != nil {
+		if err := os.WriteFile(_credential.ssmPluginPath, plugin, 0755); err != nil {
 			panicRed(internal.WrapError(err))
 		}
 	} else if err != nil {
@@ -101,7 +100,7 @@ func initConfig() {
 	} else {
 		if int(info.Size()) != len(plugin) {
 			color.Green("[update] aws ssm plugin")
-			if err := ioutil.WriteFile(_credential.ssmPluginPath, plugin, 0755); err != nil {
+			if err := os.WriteFile(_credential.ssmPluginPath, plugin, 0755); err != nil {
 				panicRed(internal.WrapError(err))
 			}
 		}
@@ -231,7 +230,7 @@ func initConfig() {
 
 		temporaryCredentialsString := fmt.Sprintf(mfaCredentialFormat, _credential.awsProfile, temporaryCredentials.AccessKeyID,
 			temporaryCredentials.SecretAccessKey, temporaryCredentials.SessionToken)
-		if err := ioutil.WriteFile(_credentialWithTemporary, []byte(temporaryCredentialsString), 0600); err != nil {
+		if err := os.WriteFile(_credentialWithTemporary, []byte(temporaryCredentialsString), 0600); err != nil {
 			panicRed(internal.WrapError(err))
 		}
 

@@ -275,29 +275,24 @@ func FindInstanceIdsWithConnectedSSM(ctx context.Context, cfg aws.Config) ([]str
 		}
 	)
 
-	output, err := client.DescribeInstanceInformation(ctx, &ssm.DescribeInstanceInformationInput{MaxResults: maxOutputResults})
+	output, err := client.DescribeInstanceInformation(ctx, &ssm.DescribeInstanceInformationInput{MaxResults: aws.Int32(maxOutputResults)})
 	if err != nil {
 		return nil, err
 	}
 	instances = outputFunc(instances, output)
 
 	// Repeat it when if output.NextToken exists.
-	if aws.ToString(output.NextToken) != "" {
-		token := aws.ToString(output.NextToken)
-		for {
-			if token == "" {
-				break
-			}
-			nextOutput, err := client.DescribeInstanceInformation(ctx, &ssm.DescribeInstanceInformationInput{
-				NextToken:  aws.String(token),
-				MaxResults: maxOutputResults})
-			if err != nil {
-				return nil, err
-			}
-			instances = outputFunc(instances, nextOutput)
-
-			token = aws.ToString(nextOutput.NextToken)
+	token := aws.ToString(output.NextToken)
+	for token != "" {
+		nextOutput, err := client.DescribeInstanceInformation(ctx, &ssm.DescribeInstanceInformationInput{
+			NextToken:  aws.String(token),
+			MaxResults: aws.Int32(maxOutputResults)})
+		if err != nil {
+			return nil, err
 		}
+		instances = outputFunc(instances, nextOutput)
+
+		token = aws.ToString(nextOutput.NextToken)
 	}
 
 	return instances, nil
@@ -339,30 +334,25 @@ func FindInstanceIdByIp(ctx context.Context, cfg aws.Config, ip string) (string,
 	}
 
 	// Repeat it when if instanceId isn't found and output.NextToken exists.
-	if aws.ToString(output.NextToken) != "" {
-		token := aws.ToString(output.NextToken)
-		for {
-			if token == "" {
-				break
-			}
-			nextOutput, err := client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-				MaxResults: aws.Int32(maxOutputResults),
-				NextToken:  aws.String(token),
-				Filters: []ec2_types.Filter{
-					{Name: aws.String("instance-state-name"), Values: []string{"running"}},
-				},
-			})
-			if err != nil {
-				return "", err
-			}
-
-			instanceId = outputFunc(nextOutput)
-			if instanceId != "" {
-				return instanceId, nil
-			}
-
-			token = aws.ToString(nextOutput.NextToken)
+	token := aws.ToString(output.NextToken)
+	for token != "" {
+		nextOutput, err := client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
+			MaxResults: aws.Int32(maxOutputResults),
+			NextToken:  aws.String(token),
+			Filters: []ec2_types.Filter{
+				{Name: aws.String("instance-state-name"), Values: []string{"running"}},
+			},
+		})
+		if err != nil {
+			return "", err
 		}
+
+		instanceId = outputFunc(nextOutput)
+		if instanceId != "" {
+			return instanceId, nil
+		}
+
+		token = aws.ToString(nextOutput.NextToken)
 	}
 
 	return "", nil
@@ -401,30 +391,25 @@ func FindDomainByInstanceId(ctx context.Context, cfg aws.Config, instanceId stri
 	}
 
 	// Repeat it when if domain isn't found and output.NextToken exists.
-	if aws.ToString(output.NextToken) != "" {
-		token := aws.ToString(output.NextToken)
-		for {
-			if token == "" {
-				break
-			}
-			nextOutput, err := client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-				MaxResults: aws.Int32(maxOutputResults),
-				NextToken:  aws.String(token),
-				Filters: []ec2_types.Filter{
-					{Name: aws.String("instance-state-name"), Values: []string{"running"}},
-				},
-			})
-			if err != nil {
-				return []string{}, err
-			}
-
-			domain = outputFunc(nextOutput, instanceId)
-			if len(domain) != 0 {
-				return domain, nil
-			}
-
-			token = aws.ToString(nextOutput.NextToken)
+	token := aws.ToString(output.NextToken)
+	for token != "" {
+		nextOutput, err := client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
+			MaxResults: aws.Int32(maxOutputResults),
+			NextToken:  aws.String(token),
+			Filters: []ec2_types.Filter{
+				{Name: aws.String("instance-state-name"), Values: []string{"running"}},
+			},
+		})
+		if err != nil {
+			return []string{}, err
 		}
+
+		domain = outputFunc(nextOutput, instanceId)
+		if len(domain) != 0 {
+			return domain, nil
+		}
+
+		token = aws.ToString(nextOutput.NextToken)
 	}
 
 	return []string{}, nil
@@ -479,7 +464,7 @@ func SendCommand(ctx context.Context, cfg aws.Config, targets []*Target, command
 	input := &ssm.SendCommandInput{
 		DocumentName:   &docName,
 		InstanceIds:    ids,
-		TimeoutSeconds: 60,
+		TimeoutSeconds: aws.Int32(60),
 		CloudWatchOutputConfig: &ssm_types.CloudWatchOutputConfig{
 			CloudWatchOutputEnabled: true,
 		},
