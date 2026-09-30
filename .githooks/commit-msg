@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -e
+
+# Path to the commit message file passed by git
+COMMIT_MSG_FILE="$1"
+
+if [ ! -f "$COMMIT_MSG_FILE" ]; then
+    echo "==> [commit-msg] Error: Commit message file not found: $COMMIT_MSG_FILE" >&2
+    exit 1
+fi
+
+# Extract the first non-comment line
+FIRST_LINE=$(grep -v '^[[:space:]]*#' "$COMMIT_MSG_FILE" | grep -v '^[[:space:]]*$' | head -n 1)
+
+if [ -z "$FIRST_LINE" ]; then
+    echo "==> [commit-msg] Error: Commit message is empty." >&2
+    exit 1
+fi
+
+# Allow git automated merge and revert commits
+MERGE_REGEX='^(Merge (pull request|branch|remote-tracking branch)|Revert "[^"]+")'
+if echo "$FIRST_LINE" | grep -Eq "$MERGE_REGEX"; then
+    exit 0
+fi
+
+# Conventional Commits format:
+# <type>[optional scope][!]: <description>
+CONVENTIONAL_REGEX='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9_\-\./]+\))?(!)?: .+'
+
+if ! echo "$FIRST_LINE" | grep -Eq "$CONVENTIONAL_REGEX"; then
+    echo "==> [commit-msg] ERROR: Invalid commit message syntax!" >&2
+    echo "" >&2
+    echo "    Your commit message was:" >&2
+    echo "      $FIRST_LINE" >&2
+    echo "" >&2
+    echo "    Commit messages must follow the Conventional Commits specification:" >&2
+    echo "      <type>[optional scope][!]: <description>" >&2
+    echo "" >&2
+    echo "    Allowed types:" >&2
+    echo "      feat     A new feature (triggers MINOR version bump)" >&2
+    echo "      fix      A bug fix (triggers PATCH version bump)" >&2
+    echo "      perf     A code change that improves performance (triggers PATCH version bump)" >&2
+    echo "      docs     Documentation only changes" >&2
+    echo "      style    Changes that do not affect code logic (formatting, etc.)" >&2
+    echo "      refactor A code change that neither fixes a bug nor adds a feature" >&2
+    echo "      test     Adding or correcting tests" >&2
+    echo "      build    Changes that affect build tools or external dependencies" >&2
+    echo "      ci       Changes to CI/CD configuration files and scripts" >&2
+    echo "      chore    Maintenance tasks that don't modify src or test code" >&2
+    echo "      revert   Reverts a previous commit" >&2
+    echo "" >&2
+    echo "    Breaking Changes:" >&2
+    echo "      Append '!' before the colon (e.g. 'feat!: ...' or 'feat(api)!: ...')" >&2
+    echo "      to trigger a MAJOR version bump." >&2
+    echo "" >&2
+    echo "    Valid Examples:" >&2
+    echo "      feat: add automated release tagging (Refs #9)" >&2
+    echo "      fix(auth): handle expired AWS MFA credentials" >&2
+    echo "      feat!: drop support for deprecated CLI flags" >&2
+    echo "      chore: update session-manager-plugin checksums" >&2
+    echo "" >&2
+    exit 1
+fi
+
+echo "==> [commit-msg] Conventional Commit syntax verified."
+exit 0
